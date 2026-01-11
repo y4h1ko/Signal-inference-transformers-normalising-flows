@@ -83,7 +83,7 @@ Everything was runned with torch cuda device. Used Python 3.12.
 ├── configuration.py         # Experiment configuration and settings
 ├── main.py                  # Prepared final models
 ├── introduction.ipynb       # Quick start & tutorial
-├── notebooks/               # Exploratory notebooks
+├── archive/                 # Exploratory notebooks and analysis
 ├── plots/                   # Figures and tables
 ├── papers/                  # Milestone and Final report (LATEX source)
 └── README.md
