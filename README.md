@@ -1,9 +1,9 @@
-# A Simple Parameter Inference with Transformers
+# Signal inference with transformers and normalising flows
 
 Semestral project for the course *Computational Intelligence Methods* (MVI), FIT CTU.
 This repository contains code and experiments accompanying the paper:
 
-**“A Simple Parameter Inference with Transformers”**
+**“Signal inference with transformers and normalising flows”**
 
 *Author:* Adam Kleman; *Supervisor:* Ippocratis Saltas
 
