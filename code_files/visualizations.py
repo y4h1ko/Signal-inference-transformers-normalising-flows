@@ -2,16 +2,32 @@ from .imports_and_libraries import *
 from .dataset_creation import *
 
 
-def plot_wave_samples(t, V_clean, V_noisy, w: float=1.0, mu: float=cfg.mu, sigma: float=cfg.noise_std, save_plot: bool=False, show_plot: bool=False):
-    ''' !!!DEPRECATED!!!
-    
-    Plot a single sine wave with and without Gaussian noise as example.
-    
-    - save_plot: when True, saves the plot to the specified folder as .png
-    - show_plot: when True, displays the plot on the screen
-    
-    Saved plot name is like: 'sine_with_noise_mu{mu}_sigma{sigma}_example.png'''
+def plot_wave_samples(t, V_clean, V_noisy, w: float=1.0, mu: float=cfg.mu, sigma: float=cfg.noise_std, save_plot: bool=False, show_plot: bool=False) -> None:
+    """
+    Plot one sine wave example with and without Gaussian noise.
 
+    Parameters
+    ----------
+    t : array-like
+        Time grid of shape (T,).
+    V_clean : array-like
+        Clean signal values of shape (T,).
+    V_noisy : array-like
+        Noisy signal values of shape (T,).
+    w : float, optional
+        True frequency used for title/label. Defaults to 1.0.
+    mu : float, optional
+        Noise mean used for title/filename. Defaults to `cfg.mu`.
+    sigma : float, optional
+        Noise std used for title/filename. Defaults to `cfg.noise_std`.
+    save_plot : bool, optional
+        If True, save figure to `cfg.plots_dir`. Defaults to False.
+        Save plot name is like: 'sine_with_noise_mu{mu}_sigma{sigma}_example.png
+    show_plot : bool, optional
+        If True, display figure window. Defaults to False.
+
+    Returns -> None
+    """
     plt.figure(figsize=(8,6))
     plt.plot(t, V_clean, label="clean sine", linewidth=2)
     plt.scatter(t, V_noisy, s=15, alpha=0.7, label="noisy sample", c='black', marker='x')
@@ -33,15 +49,47 @@ def plot_wave_samples(t, V_clean, V_noisy, w: float=1.0, mu: float=cfg.mu, sigma
 
 
 def plot_pred_vs_true(y_true, y_pred, test_mse, test_mae, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, 
-                      w_max: float=cfg.omega_max, seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False):
-    '''Plot predicted vs true values frequencies into scatter plot from test set.
-    
-    - save_plot: if True, saves the plot to the specified folder as .png
-    - show_plot: if True, displays the plot on the screen
-    - other optional parameters are for plot title and filename
+                      w_max: float=cfg.omega_max, seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False) -> None:
+    """
+    Scatter plot of predicted vs. true omega for the single-frequency model.
 
-    Saved plot name is like: 'T1_w{w_min}-{w_max}_N{N}_tdis{t_disc}_seed{seed}_PREDvsREAL.png'
-    '''
+    The function draws a y=x reference line and prints MSE/MAE in the title.
+
+    Parameters
+    ----------
+    y_true : torch.Tensor or np.ndarray
+        True omega values, shape (N, 1) or (N,). If torch.Tensor, it is expected
+        to be on CPU or convertible via `.numpy()`.
+    y_pred : torch.Tensor or np.ndarray
+        Predicted omega values, shape (N, 1) or (N,).
+    test_mse : float
+        Test mean squared error displayed in the plot title.
+    test_mae : float
+        Test mean absolute error displayed in the plot title.
+    N : int, optional
+        Number of samples (used only for title/filename). Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization length (used only for title/filename). Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega (used only for title/filename). Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega (used only for title/filename). Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Random seed identifier (used only for filename). Defaults to `cfg.seed`.
+    sigma : float, optional
+        Noise std identifier (used only for title/filename). Defaults to `cfg.noise_std`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    save_plot : bool, optional
+        If True, saves PNG into `folder` with filename:
+        `T2_N{N}_tdis{t_disc}_w{w_min}-{w_max}_seed{seed}_std{sigma}_PREDvsREAL.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+        
+    Returns -> None
+    """
 
     plt.figure(figsize=(6,6))
     plt.scatter(y_true.numpy(), y_pred.numpy(), s=14, alpha=0.6)
@@ -63,18 +111,48 @@ def plot_pred_vs_true(y_true, y_pred, test_mse, test_mae, N: int=cfg.num_of_samp
 
 def plot_loss_curves(train_mse_hist, val_mse_hist, epochs: int=cfg.epochs, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, 
                      w_max: float=cfg.omega_max, seed=cfg.seed, folder=cfg.plots_dir, sigma: float=cfg.noise_std, save_plot: bool=False, show_plot: bool=False, 
-                     y_limit: float=None, zoom: str="full", name_suf: str=""):
-    '''Plot training and validation loss curves over epochs.
-    
-    - save_plot: if True, saves the plot to the specified folder as .png
-    - show_plot: if True, displays the plot on the screen
-    - y_limit: sets the y-axis limit for better detail
-    - zoom: defualt is 'full', when y_limit is set, recomended to set as y_limit value for recognition in filename
-    - other optional parameters are for plot title and filename
-    
-    Saved plot name is like: 'T1{name_suf}_w{w_min}-{w_max}_N{N}_tdis{t_disc}_seed{seed}_LOSSf_{zoom}.png'
-    '''
+                     y_limit: float=None, zoom: str="full", name_suf: str="") -> None:
+    """
+    Plot training and validation MSE curves over epochs.
 
+    Parameters
+    ----------
+    train_mse_hist : list[float] or array-like
+        Training MSE values per epoch (length should be `epochs`).
+    val_mse_hist : list[float] or array-like
+        Validation MSE values per epoch (length should be `epochs`).
+    epochs : int, optional
+        Number of epochs shown on x-axis. Defaults to `cfg.epochs`.
+    N : int, optional
+        Number of samples (used only for title/filename). Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization length (used only for title/filename). Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega (used only for title/filename). Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega (used only for title/filename). Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Random seed identifier (used only for filename). Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    sigma : float, optional
+        Noise std identifier (used only for title/filename). Defaults to `cfg.noise_std`.
+    save_plot : bool, optional
+        If True, saves PNG into `folder` with filename:
+        `T2{name_suf}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}_LOSSf_{zoom}.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+    y_limit : float or None, optional
+        If provided, sets y-axis upper limit (zoom). Defaults to None (no limit).
+    zoom : str, optional
+        Label used in saved filename to distinguish zoom settings. Defaults to "full".
+    name_suf : str, optional
+        Extra suffix inserted after "T2" in the saved filename (e.g. model tag).
+        Defaults to "".
+
+    Returns -> None
+    """
 
     epochs_axis = range(1, epochs + 1)
     plt.figure(figsize=(8,5))
@@ -97,16 +175,48 @@ def plot_loss_curves(train_mse_hist, val_mse_hist, epochs: int=cfg.epochs, N: in
     plt.close()
 
 
-def plot_val_curves_fixed_N(results, N, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False, y_limit: float=None, zoom: str="full"):
-    '''Plot Val MSE vs epoch for all t_disc, for a given N. Only used when analyzing different number of samples N and time discretizations t_disc.
-    
-    - save_plot: if True, saves the plot to the specified folder as .png
-    - show_plot: if True, displays the plot on the screen
-    - y_limit: sets the y-axis limit for better detail
-    - zoom: defualt is 'full', when y_limit is set, recomended to set as y_limit value for recognition in filename
+def plot_val_curves_fixed_N(results, N, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False, y_limit: float=None, zoom: str="full") -> None:
+    """
+    Plot training and validation MSE curves over epochs.
 
-    Saved plot name is like: 'VALcurves_N{N}_{zoom}.png'
-    '''
+    Parameters
+    ----------
+    train_mse_hist : list[float] or array-like
+        Training MSE values per epoch (length should be `epochs`).
+    val_mse_hist : list[float] or array-like
+        Validation MSE values per epoch (length should be `epochs`).
+    epochs : int, optional
+        Number of epochs shown on x-axis. Defaults to `cfg.epochs`.
+    N : int, optional
+        Number of samples (used only for title/filename). Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization length (used only for title/filename). Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega (used only for title/filename). Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega (used only for title/filename). Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Random seed identifier (used only for filename). Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    sigma : float, optional
+        Noise std identifier (used only for title/filename). Defaults to `cfg.noise_std`.
+    save_plot : bool, optional
+        If True, saves PNG into `folder` with filename:
+        `T2{name_suf}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}_LOSSf_{zoom}.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+    y_limit : float or None, optional
+        If provided, sets y-axis upper limit (zoom). Defaults to None (no limit).
+    zoom : str, optional
+        Label used in saved filename to distinguish zoom settings. Defaults to "full".
+    name_suf : str, optional
+        Extra suffix inserted after "T2" in the saved filename (e.g. model tag).
+        Defaults to "".
+
+    Returns -> None
+    """
 
     subset = [r for r in results if r["N"] == N]
     if not subset:
@@ -135,24 +245,40 @@ def plot_val_curves_fixed_N(results, N, folder=cfg.plots_dir, save_plot: bool=Fa
     plt.close()
 
 
-def plot_parallel_hparams( csv_path: str, top_k: int | None = None, renderer: str = "browser",
-    dims: list[str] | None = None, color_col: str = "best_val", title_prefix: str = "Parallel coordinates", show: bool = False, save_path: str | None = None):
+def plot_parallel_hparams( csv_path: str, top_k: int | None=None, renderer: str="browser", dims: list[str] | None=None, color_col: str="best_val", 
+                title_prefix: str="Parallel coordinates", show: bool=False, save_path: str | None=None) -> None:
     """
-    Plot parallel coordinates for transformer hyperparameter search.
+     Plot a Plotly parallel-coordinates chart for hyperparameter search results stored in a CSV.
+
+    The plot is built from a subset of rows:
+    - if top_k is None: uses all rows
+    - else: uses the top_k rows with the smallest values in `color_col`
 
     Parameters
     ----------
-    csv_path : str -Ppth to CSV file with reuslts.
-    top_k : int or None -None use ALL rows. -int use n rows with smallest best_val.
-    rescale_to_subset : bool
-        If True  -> colour scale and axis range use only the subset (top_k).
-        If False -> colour scale and axis range use the FULL dataset.
-    
-    dims : list[str] or None
-        List of columns to use as axes. If None, defaults to:
-        ['d_model', 'nhead', 'num_layers', 'dim_f', color_col]
-        
-    title_prefix : str -Text at beginning of figure title.
+    csv_path : str
+        Path to the CSV file containing hyperparameter runs.
+    top_k : int or None, optional
+        If None, uses all rows. If int, uses the `top_k` rows with the smallest
+        values in `color_col`. Defaults to None.
+    renderer : str, optional
+        Plotly renderer name (e.g. "browser", "notebook"). Defaults to "browser".
+    dims : list[str] or None, optional
+        Column names used as axes in the parallel plot. If None, defaults to:
+        ["d_model", "nhead", "num_layers", "dim_f", color_col].
+    color_col : str, optional
+        Column used both for coloring and for selecting top_k. Defaults to "best_val".
+    title_prefix : str, optional
+        Prefix text used in the figure title. Defaults to "Parallel coordinates".
+    show : bool, optional
+        If True, displays the interactive figure. Defaults to False.
+    save_path : str or None, optional
+        If provided, saves the figure:
+        - to HTML if save_path ends with ".html"
+        - otherwise uses Plotly image export (requires kaleido).
+        Defaults to None.
+
+    Returns -> None
     """
 
     pio.renderers.default = renderer
@@ -196,13 +322,51 @@ def plot_parallel_hparams( csv_path: str, top_k: int | None = None, renderer: st
 def plot_dataset_vs_learned_marginal(model: nn.Module, device, loader, num_samples_per_x: int=100, bins: int=50, N: int=cfg.num_of_samples, 
                     t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, w_max: float=cfg.omega_max, seed=cfg.seed, folder=cfg.plots_dir, 
                     sigma: float=cfg.noise_std, fl_hid_feat: int=cfg.flow_hidden_features, fl_lay: int=cfg.flow_num_layers,
-                    save_plot: bool=False, show_plot: bool=False):
+                    save_plot: bool=False, show_plot: bool=False) -> None:
     """
-    Histogram of:
-      - dataset targets ω (all y from loader)
-      - model samples ω ~ p(ω | x) from the flow head
+    Compare dataset target distribution to flow-sampled predictive distribution.
 
-    This uses model.sample(...) → **learned ω distribution**, NOT latent z.
+    The function builds two 1D histograms:
+    1) All true targets ω from `loader` (concatenated across batches)
+    2) Flow samples ω ~ p(ω | x) drawn via `model.sample(xb, num_samples=num_samples_per_x)`
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        A model implementing `sample(x, num_samples=...)` returning ω samples.
+    device : torch.device
+        Device used for running the model.
+    loader : DataLoader
+        DataLoader returning batches (xb, yb), where yb has shape (batch, 1) or (batch,).
+    num_samples_per_x : int, optional
+        Number of ω samples drawn per input xb item. Defaults to 100.
+    bins : int, optional
+        Number of histogram bins for both distributions. Defaults to 50.
+    N : int, optional
+        Dataset size used only for filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    sigma : float, optional
+        Noise std identifier used only for filename metadata. Defaults to `cfg.noise_std`.
+    fl_hid_feat : int, optional
+        Flow hidden feature count used only for filename metadata. Defaults to `cfg.flow_hidden_features`.
+    fl_lay : int, optional
+        Flow layer count used only for filename metadata. Defaults to `cfg.flow_num_layers`.
+    save_plot : bool, optional
+        If True, saves PNG with filename:
+        `dataset_vs_learned_marginal_flow_T2_flowHidFeat{fl_hid_feat}_flowLay{fl_lay}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+    Returns -> None
     """
     model.eval()
 
@@ -248,10 +412,60 @@ def plot_dataset_vs_learned_marginal(model: nn.Module, device, loader, num_sampl
 def plot_flow_posterior_one_example(model: nn.Module, device, loader, global_index: int=0, num_samples: int=100000, bins: int=100, num_sigmas: int=3, 
                     N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, w_max: float=cfg.omega_max, 
                     seed=cfg.seed, folder=cfg.plots_dir, fl_hid_feat: int=cfg.flow_hidden_features,
-                    fl_lay: int=cfg.flow_num_layers, save_plot: bool=False, show_plot: bool=False):
+                    fl_lay: int=cfg.flow_num_layers, save_plot: bool=False, show_plot: bool=False) -> None:
     """
-    Take one x from the first batch, sample ω ~ p(ω | x) many times,
-    and plot the learned 1D conditional with the true ω marked.
+    Plot the learned 1D conditional posterior p(ω | x) for one chosen example.
+
+    The function selects one example (by `global_index`) from the dataloader,
+    draws many samples ω ~ p(ω | x) using `model.sample`, and plots a histogram
+    with vertical lines showing:
+    - true ω
+    - sample mean μ
+    - ±kσ reference lines (for k=1..num_sigmas)
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        A model implementing `sample(x, num_samples=...)` returning ω samples.
+    device : torch.device
+        Device used for running the model.
+    loader : DataLoader
+        DataLoader returning batches (xb, yb). Targets yb must contain ω per sample.
+    global_index : int, optional
+        Global index into the dataset order provided by `loader` iteration.
+        Defaults to 0.
+    num_samples : int, optional
+        Number of Monte Carlo samples drawn from the flow for the selected x.
+        Defaults to 100000.
+    bins : int, optional
+        Number of histogram bins. Defaults to 100.
+    num_sigmas : int, optional
+        Number of ±kσ reference lines to draw. Defaults to 3.
+    N : int, optional
+        Dataset size used only for filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    fl_hid_feat : int, optional
+        Flow hidden feature count used only for filename metadata. Defaults to `cfg.flow_hidden_features`.
+    fl_lay : int, optional
+        Flow layer count used only for filename metadata. Defaults to `cfg.flow_num_layers`.
+    save_plot : bool, optional
+        If True, saves PNG with filename:
+        `Probab_density_T2_flowHidFeat{fl_hid_feat}_flowLay{fl_lay}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}.png`.
+        (Uses your existing path logic.) Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+
+    Returns -> None
     """
     model.eval()
 
@@ -337,13 +551,50 @@ def plot_flow_posterior_one_example(model: nn.Module, device, loader, global_ind
 
 def plot_error_vs_true_omega(y_true, y_pred, smooth_window_frac: float = 0.075, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, 
                     w_max: float=cfg.omega_max, seed=cfg.seed, folder=cfg.plots_dir, sigma: float=cfg.noise_std, fl_hid_feat: int=cfg.flow_hidden_features,
-                    fl_lay: int=cfg.flow_num_layers, save_plot: bool = False, show_plot: bool = False):
+                    fl_lay: int=cfg.flow_num_layers, save_plot: bool = False, show_plot: bool = False) -> None:
     """
-    x-axis: true ω
-    y-axis: |pred - true|  (absolute error)
+    Plot absolute prediction error as a function of the true omega.
 
-    - blue scatter: all samples
-    - black smooth curve: average error as a function of true ω.
+    The plot includes:
+    - scatter of per-sample absolute error |y_pred - y_true|
+    - a smoothed curve computed by sorting by y_true and applying a moving average
+
+    Parameters
+    ----------
+    y_true : array-like
+        True omega values, shape (N,) or (N,1). Converted internally via `np.asarray(...).flatten()`.
+    y_pred : array-like
+        Predicted omega values, shape compatible with y_true. Flattened the same way.
+    smooth_window_frac : float, optional
+        Fraction of dataset size used as the moving-average window length.
+        The actual window is at least 5 and forced to be odd. Defaults to 0.075.
+    N : int, optional
+        Dataset size used only for filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+        (Note: your current code saves to `cfg.plots_dir` directly.)
+    sigma : float, optional
+        Noise std identifier used only for filename metadata. Defaults to `cfg.noise_std`.
+    fl_hid_feat : int, optional
+        Flow hidden feature count used only for filename metadata. Defaults to `cfg.flow_hidden_features`.
+    fl_lay : int, optional
+        Flow layer count used only for filename metadata. Defaults to `cfg.flow_num_layers`.
+    save_plot : bool, optional
+        If True, saves PNG with filename:
+        `T2_error_vs_true_omega__T2_flowHidFeat{fl_hid_feat}_flowLay{fl_lay}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+    Returns -> None
     """
     y_true = np.asarray(y_true).flatten()
     y_pred = np.asarray(y_pred).flatten()
@@ -385,15 +636,37 @@ def plot_error_vs_true_omega(y_true, y_pred, smooth_window_frac: float = 0.075, 
     plt.close()
 
 @torch.no_grad()
-def plot_uncertainty_vs_error(model: nn.Module, device, loader, num_samples: int=100, save_plot: bool=False, show_plot: bool=False,):
+def plot_uncertainty_vs_error(model: nn.Module, device, loader, num_samples: int=100, save_plot: bool=False, show_plot: bool=False) -> None:
     """
-    !! DEPRICATED !! didnt use this plot in the end. Better is plot_error_vs_true_omega
+    Plot predictive uncertainty vs absolute error for a flow-based single-frequency model.
 
-    For each example:
-      - draw many ω samples from p(ω | x)
-      - compute predictive mean and std
-      - compute |mean - true ω|
-    Then scatter: std (x-axis) vs error (y-axis).
+    For each input x:
+    - draw `num_samples` samples ω ~ p(ω | x)
+    - compute predictive mean and std over those samples
+    - compute absolute error |mean(ω) - ω_true|
+    Then scatter: std(ω) (x-axis) vs |mean-true| (y-axis).
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        A model implementing `sample(x, num_samples=...)` returning ω samples.
+    device : torch.device
+        Device used for running the model.
+    loader : DataLoader
+        DataLoader returning batches (xb, yb), where yb contains ω_true.
+    num_samples : int, optional
+        Number of Monte Carlo samples per input. Defaults to 100.
+    save_plot : bool, optional
+        If True, saves PNG into `cfg.plots_dir` with filename `uncertainty_vs_error_flow.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+    Returns -> None
+
+    Notes
+    -----
+    This plot is optional (not used in final versions). For error analysis vs ω, prefer `plot_error_vs_true_omega`.
     """
     model.eval()
 
@@ -445,21 +718,42 @@ def plot_uncertainty_vs_error(model: nn.Module, device, loader, num_samples: int
 
 #for two omegas
 def plot_double_wave_sample_general(t, V_noisy, w1: float, w2: float|None=None, mu: float=cfg.mu, sigma: float=cfg.noise_std, signal: str="single", 
-                save_plot: bool=False, show_plot: bool=False):
+                save_plot: bool=False, show_plot: bool=False) -> None:
     """
-    Plot one example of a signal.
+    Plot one example signal for the two-frequency dataset family.
 
-    signal options:
-      - "single":
-            y(t) = sin(w1*t)
-      - "linear":
-            y(t) = sin(w1*t) + sin(w2*t)
-      - "product":
-            y(t) = sin(w1*t) + sin(w2*t) + sin(w1*t)*sin(w2*t)
+    This function overlays:
+    - a dense "clean" curve built from the analytic formula (using a refined time grid)
+    - the provided noisy samples V_noisy evaluated on the original grid t
 
-    Notes:
-      - w2 is ignored for signal="single"
-      - V_noisy should already come from the dataset
+    Parameters
+    ----------
+    t : array-like
+        Time grid of shape (T,).
+    V_noisy : array-like
+        Noisy observed values on t, shape (T,). Expected to already include noise.
+    w1 : float
+        First frequency parameter used in the analytic clean signal.
+    w2 : float or None, optional
+        Second frequency parameter (required for signal types that use two frequencies).
+        Ignored when `signal="single"`. Defaults to None.
+    mu : float, optional
+        Noise mean metadata used in the plot title/filename. Defaults to `cfg.mu`.
+    sigma : float, optional
+        Noise std metadata used in the plot title/filename. Defaults to `cfg.noise_std`.
+    signal : str, optional
+        Analytic signal type used to generate the clean curve. Supported values:
+        - "single":  sin(w1 * t)
+        - "linear":  sin(w1 * t) + sin(w2 * t)
+        - "product" / "nonlinear": sin(w1 * t) + sin(w2 * t) + sin(w1 * t) * sin(w2 * t)
+        Defaults to "single".
+    save_plot : bool, optional
+        If True, saves PNG into `cfg.plots_dir` with a filename depending on `signal`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+    Returns -> None
     """
 
     t_clean = np.linspace(t.min(), t.max(), len(t) * 100)
@@ -506,8 +800,31 @@ def plot_double_wave_sample_general(t, V_noisy, w1: float, w2: float|None=None, 
 
     plt.close()
 
-def plot_waves_clean_and_signal_points(i:int=0, wave_type: str="linear", noise: bool=False, save_plot: bool=False, show_plot: bool=False):
-    '''Plotting one sine wave sample from dataset'''
+def plot_waves_clean_and_signal_points(i:int=0, wave_type: str="linear", noise: bool=False, save_plot: bool=False, show_plot: bool=False) -> None:
+    """
+    Plot one dataset example (clean curve + discrete signal points) for two-frequency settings.
+
+    The function generates a dataset using the project’s dataset creation utilities and
+    plots the i-th sample as:
+    - dense clean curve (analytic)
+    - discrete sampled points (with optional noise)
+
+    Parameters
+    ----------
+    i : int, optional
+        Index of the example to plot. Defaults to 0.
+    wave_type : str, optional
+        Signal type used for dataset generation (e.g. "linear", "product", ...).
+        Defaults to "linear".
+    noise : bool, optional
+        If True, uses the noisy dataset variant; otherwise clean points. Defaults to False.
+    save_plot : bool, optional
+        If True, saves the figure into `cfg.plots_dir`. Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+    Returns -> None
+    """
 
     if wave_type == "linear":
         V_np, tar_np, t_np = make_double_sine_dataset(noise=noise)
@@ -526,11 +843,65 @@ def plot_waves_clean_and_signal_points(i:int=0, wave_type: str="linear", noise: 
 
 @torch.no_grad()
 def plot_flow_posterior_double_example(model: nn.Module, device,loader, global_index: int=0, num_samples: int=100000, bins: int=100,
-    num_sigmas: int=3, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, w_max: float=cfg.omega_max,
-    seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, fl_hid_feat: int=cfg.flow_hidden_features, fl_lay: int=cfg.flow_num_layers, 
-    save_plot: bool=False, show_plot: bool=False):
-    '''For a chosen example (global_index), sample many times from the flow. Sorted to (w_1, w_2), 
-    and plot two 1D posteriors side-by-side, each with true value, mean μ and ±kσ lines.'''
+        num_sigmas: int=3, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min, w_max: float=cfg.omega_max,
+        seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, fl_hid_feat: int=cfg.flow_hidden_features, fl_lay: int=cfg.flow_num_layers, 
+        save_plot: bool=False, show_plot: bool=False) -> None:
+    """
+    Plot 1D marginal posteriors for one example in the two-frequency flow model.
+
+    Workflow:
+    - select one example by `global_index` from the loader
+    - sort the true pair into (w_1_true, w_2_true) where w_1_true <= w_2_true
+    - draw many samples from the model flow via `model.sample(x_one, num_samples=...)`
+    - sort each sampled pair into (w_1, w_2)
+    - plot two histograms side-by-side: posterior of w_1 and posterior of w_2,
+      each with true value, sample mean μ, and ±kσ reference lines
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        A model implementing `sample(x, num_samples=...)` returning samples of shape (1, num_samples, 2)
+        or compatible.
+    device : torch.device
+        Device used for inference.
+    loader : DataLoader
+        DataLoader returning (xb, yb), with yb containing true pairs (batch, 2).
+    global_index : int, optional
+        Global index into the dataset order produced by iterating `loader`. Defaults to 0.
+    num_samples : int, optional
+        Number of Monte Carlo samples drawn for the selected example. Defaults to 100000.
+    bins : int, optional
+        Number of histogram bins per marginal. Defaults to 100.
+    num_sigmas : int, optional
+        Number of ±kσ reference lines to draw. Defaults to 3.
+    N : int, optional
+        Dataset size used only for title/filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for title/filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for title/filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for title/filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    sigma : float, optional
+        Noise std identifier used only for title/filename metadata. Defaults to `cfg.noise_std`.
+    fl_hid_feat : int, optional
+        Flow hidden feature count used only for filename metadata. Defaults to `cfg.flow_hidden_features`.
+    fl_lay : int, optional
+        Flow layer count used only for filename metadata. Defaults to `cfg.flow_num_layers`.
+    save_plot : bool, optional
+        If True, saves PNG with filename:
+        `Probab_density_twofreq_idx{global_index}_FlowHid{fl_hid_feat}_FlowLay{fl_lay}_N{N}_tdis{t_disc}_std{sigma}_w{w_min}-{w_max}_seed{seed}.png`.
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+
+    Returns -> None
+    """
+
     model.eval()
 
     start = 0
@@ -624,18 +995,48 @@ def plot_flow_posterior_double_example(model: nn.Module, device,loader, global_i
     plt.close(fig)
 
 def plot_pred_vs_true_double(y_true, y_pred, test_mse, test_mae, N: int=cfg.num_of_samples, t_disc: int=cfg.discr_of_time, w_min: float=cfg.omega_min,
-            w_max: float=cfg.omega_max, seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False):
-    '''Plot predicted vs true values frequencies into scatter plot from test set - for double-frequency model, using sorted pairs.
+            w_max: float=cfg.omega_max, seed=cfg.seed, sigma: float=cfg.noise_std, folder=cfg.plots_dir, save_plot: bool=False, show_plot: bool=False) -> None:
+    """
+    Scatter plot of predicted vs true frequency pairs for the two-frequency task.
+
+    The function sorts both y_true and y_pred row-wise into (w_1, w_2) with w_1 <= w_2
+    and produces two scatter plots:
+    - predicted w_1 vs true w_1
+    - predicted w_2 vs true w_2
+    Each subplot includes a y=x reference line.
+
+    Parameters
+    ----------
+    y_true : torch.Tensor or np.ndarray
+        True frequency pairs, shape (N, 2).
+    y_pred : torch.Tensor or np.ndarray
+        Predicted frequency pairs, shape (N, 2).
+    test_mse : float
+        Test mean squared error displayed in the title.
+    test_mae : float
+        Test mean absolute error displayed in the title.
+    N : int, optional
+        Dataset size used only for title/filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for title/filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for title/filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for title/filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    sigma : float, optional
+        Noise std identifier used only for title/filename metadata. Defaults to `cfg.noise_std`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    save_plot : bool, optional
+        If True, saves PNG into `folder` (uses your current naming convention).
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
     
-        w_1  = min(w1, w2)
-        w_2 = max(w1, w2)
-
-    - save_plot: if True, saves the plot to the specified folder as .png
-    - show_plot: if True, displays the plot on the screen
-    - other optional parameters are for plot title and filename
-
-    Saved plot name is like: 'T3_w{w_min}-{w_max}_N{N}_tdis{t_disc}_seed{seed}_PREDvsREAL.png'
-    '''
+    Returns -> None
+    """
 
     if hasattr(y_true, "detach"):
         y_true_np = y_true.detach().cpu().numpy()
@@ -690,8 +1091,46 @@ def plot_pred_vs_true_double(y_true, y_pred, test_mse, test_mae, N: int=cfg.num_
     plt.close(fig)
 
 def plot_freq_space_true_vs_pred(y_true, y_pred, test_mse, test_mae, N: int = cfg.num_of_samples, t_disc: int = cfg.discr_of_time, w_min: float = cfg.omega_min,
-    w_max: float = cfg.omega_max, seed=cfg.seed, sigma: float = cfg.noise_std, folder=cfg.plots_dir, save_plot: bool = False, show_plot: bool = False):
-    '''Single plot with both true and predicted (w_1, w_2) in frequency space.'''
+    w_max: float = cfg.omega_max, seed=cfg.seed, sigma: float = cfg.noise_std, folder=cfg.plots_dir, save_plot: bool = False, show_plot: bool = False) -> None:
+    """
+    Plot both true and predicted (w_1, w_2) pairs in the same frequency-space figure.
+
+    The function sorts pairs row-wise into (w_1, w_2) with w_1 <= w_2, then plots:
+    - true points in (w_1, w_2) plane
+    - predicted points in (w_1, w_2) plane
+
+    Parameters
+    ----------
+    y_true : torch.Tensor or np.ndarray
+        True frequency pairs, shape (N, 2).
+    y_pred : torch.Tensor or np.ndarray
+        Predicted frequency pairs, shape (N, 2).
+    test_mse : float
+        Test mean squared error displayed in the title.
+    test_mae : float
+        Test mean absolute error displayed in the title.
+    N : int, optional
+        Dataset size used only for title/filename metadata. Defaults to `cfg.num_of_samples`.
+    t_disc : int, optional
+        Time discretization used only for title/filename metadata. Defaults to `cfg.discr_of_time`.
+    w_min : float, optional
+        Minimum omega used only for title/filename metadata. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum omega used only for title/filename metadata. Defaults to `cfg.omega_max`.
+    seed : int, optional
+        Seed identifier used only for filename metadata. Defaults to `cfg.seed`.
+    sigma : float, optional
+        Noise std identifier used only for title/filename metadata. Defaults to `cfg.noise_std`.
+    folder : pathlib.Path or str, optional
+        Output directory used when `save_plot=True`. Defaults to `cfg.plots_dir`.
+    save_plot : bool, optional
+        If True, saves PNG into `folder` (uses your current naming convention).
+        Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to False.
+    
+    Returns -> None
+    """
 
     if hasattr(y_true, "detach"):
         y_true_np = y_true.detach().cpu().numpy()
@@ -741,16 +1180,62 @@ def plot_freq_space_true_vs_pred(y_true, y_pred, test_mse, test_mae, N: int = cf
 
 #Contour visualizations for 2 omegas
 def plot_analytic_contours_sin2(t0: float=1.0, w_min: float=cfg.omega_min, w_max: float=cfg.omega_max, n_points: int=1000, levels=None, save_plot: bool=False,
-    show_plot: bool=True, folder=cfg.plots_dir, triple_t: bool=False, dt: float=0.1, n_levels: int=40, cmap: str="viridis", signal: str="linear", 
-    fullcolor: bool=True, fixed_range: bool=True):
+        show_plot: bool=True, folder=cfg.plots_dir, triple_t: bool=False, dt: float=0.1, n_levels: int=40, cmap: str="viridis", signal: str="linear", 
+        fullcolor: bool=True, fixed_range: bool=True) -> None:
     """
-    Contour plots in (w1,w2) for different analytic "signal" formulas.
+    Plot analytic contour maps in (w1, w2) space for several synthetic signal formulas.
 
-    signal options:
-      - "linear":            sin(t*w1) + sin(t*w2)
-      - "product":           sin(t*w1) + sin(t*w2) + sin(t*w1)*sin(t*w2)
-      - "nonlinear_sq":      sin(t*w1^2) + sin(t*w2^2) + sin(t*w1^2)*sin(t*w2^2)
-      - "nonlinear_sinprod": sin(t*w1) + sin(t*w2) + sin(t*w1*w2)
+    The function evaluates an analytic function F(w1, w2; t) on a grid:
+    w1 in [w_min, w_max], w2 in [w_min, w_max], with `n_points` resolution.
+
+    Supported analytic signals (controlled by `signal`):
+    - "linear":            F = sin(t*w1) + sin(t*w2)
+    - "product":           F = sin(t*w1) + sin(t*w2) + sin(t*w1)*sin(t*w2)
+    - "nonlinear_sq":      F = sin(t*w1^2) + sin(t*w2^2) + sin(t*w1^2)*sin(t*w2^2)
+    - "nonlinear_sinprod": F = sin(t*w1) + sin(t*w2) + sin(t*w1*w2)
+
+    Parameters
+    ----------
+    t0 : float, optional
+        Base time value used in the analytic formula. Defaults to 1.0.
+    w_min : float, optional
+        Minimum frequency for grid. Defaults to `cfg.omega_min`.
+    w_max : float, optional
+        Maximum frequency for grid. Defaults to `cfg.omega_max`.
+    n_points : int, optional
+        Number of grid points along each axis (w1 and w2). Defaults to 1000.
+    levels : array-like or None, optional
+        Explicit contour levels. If None, levels are generated using `n_levels`.
+        Defaults to None.
+    save_plot : bool, optional
+        If True, saves the figure into `folder`. Defaults to False.
+    show_plot : bool, optional
+        If True, displays the figure. Defaults to True.
+    folder : pathlib.Path or str, optional
+        Output directory used when saving. Defaults to `cfg.plots_dir`.
+    triple_t : bool, optional
+        If True, plots contours for three time values: [t0-dt, t0, t0+dt].
+        If False, plots only at t0. Defaults to False.
+    dt : float, optional
+        Time offset used when `triple_t=True`. Defaults to 0.1.
+    n_levels : int, optional
+        Number of automatically generated contour levels when `levels is None`.
+        Defaults to 40.
+    cmap : str, optional
+        Matplotlib colormap name used for filled contour. Defaults to "viridis".
+    signal : str, optional
+        Analytic formula selector. Must be one of:
+        {"linear", "product", "nonlinear_sq", "nonlinear_sinprod"}.
+        Defaults to "linear".
+    fullcolor : bool, optional
+        If True, uses `contourf` (filled). If False, uses line contours only.
+        Defaults to True.
+    fixed_range : bool, optional
+        If True, uses a fixed theoretical value range per `signal`.
+        If False, uses min/max of the computed grid at the first time value.
+        Defaults to True.
+    
+    Returns -> None
     """
 
     w1 = np.linspace(w_min, w_max, n_points)
